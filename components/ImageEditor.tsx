@@ -3,6 +3,20 @@ import React, { useState, useRef } from 'react';
 import { editImage } from '../services/geminiService';
 import { LoadingSpinner } from './LoadingSpinner';
 
+const readFileAsDataURL = (file: File) =>
+  new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      if (typeof reader.result === 'string') {
+        resolve(reader.result);
+      } else {
+        reject(new Error('No se pudo leer el archivo como base64.'));
+      }
+    };
+    reader.onerror = () => reject(new Error('Ocurrió un error al leer el archivo.'));
+    reader.readAsDataURL(file);
+  });
+
 const ImageEditor: React.FC = () => {
   const [originalImage, setOriginalImage] = useState<string | null>(null);
   const [editedImage, setEditedImage] = useState<string | null>(null);
@@ -35,16 +49,12 @@ const ImageEditor: React.FC = () => {
     setEditedImage(null);
 
     try {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onloadend = async () => {
-        const base64String = (reader.result as string).split(',')[1];
-        const resultBase64 = await editImage(base64String, file.type, prompt);
-        setEditedImage(`data:image/png;base64,${resultBase64}`);
-      }
+      const base64String = (await readFileAsDataURL(file)).split(',')[1];
+      const resultBase64 = await editImage(base64String, file.type, prompt);
+      setEditedImage(`data:image/png;base64,${resultBase64}`);
     } catch (err) {
       console.error('Error editing image:', err);
-      setError('No se pudo editar la imagen. Inténtalo de nuevo.');
+      setError(err instanceof Error ? err.message : 'No se pudo editar la imagen. Inténtalo de nuevo.');
     } finally {
       setIsLoading(false);
     }

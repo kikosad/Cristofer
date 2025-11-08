@@ -201,7 +201,11 @@ const LiveJournal: React.FC<LiveJournalProps> = ({ pages }) => {
 
         } catch (err) {
             console.error('Failed to start session:', err);
-            setError('No se pudo acceder al micrófono. Por favor, verifica los permisos.');
+            if (err instanceof Error) {
+                setError(err.message);
+            } else {
+                setError('No se pudo iniciar la sesión en vivo. Verifica los permisos del micrófono y tu configuración de IA.');
+            }
             setIsConnecting(false);
         }
     };
