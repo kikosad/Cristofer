@@ -5,12 +5,16 @@ import type { Page, GroundingChunk } from '../types';
 
 const envApiKey = (() => {
     // Prefer the Vite-style environment variable, but keep backwards compatibility
-    const viteKey = typeof import.meta !== 'undefined' ? import.meta.env?.VITE_GEMINI_API_KEY : undefined;
+    const metaEnv = (typeof import.meta !== "undefined" ? import.meta.env : undefined) as
+        | Record<string, string | undefined>
+        | undefined;
+
+    const viteKey = metaEnv?.VITE_GEMINI_API_KEY ?? metaEnv?.GEMINI_API_KEY;
     if (viteKey) {
-        return viteKey as string;
+        return viteKey;
     }
 
-    if (typeof process !== 'undefined' && process.env) {
+    if (typeof process !== "undefined" && process.env) {
         return process.env.GEMINI_API_KEY ?? process.env.API_KEY;
     }
 
