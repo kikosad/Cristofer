@@ -1,0 +1,7 @@
+{
+  "name": "Copy of El Espejo Interior: Un Viaje de Autointrospección",
+  "description": "Una aplicación de libro interactivo que combina un profundo viaje de autodescubrimiento de 100 páginas con herramientas de IA de vanguardia. Chatea con un bot sobre los conceptos del libro, explora temas con búsqueda web, transforma tus imágenes para que coincidan con tu estado de ánimo y habla en un diario verbal en tiempo real.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
