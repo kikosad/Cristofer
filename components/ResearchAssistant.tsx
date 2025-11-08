@@ -24,7 +24,7 @@ const ResearchAssistant: React.FC = () => {
       setResponse(result);
     } catch (err) {
       console.error('Error getting grounded response:', err);
-      setError('No se pudo obtener una respuesta. Inténtalo de nuevo.');
+      setError(err instanceof Error ? err.message : 'No se pudo obtener una respuesta. Inténtalo de nuevo.');
     } finally {
       setIsLoading(false);
     }

@@ -1,13 +1,30 @@
 
 
-import { GoogleGenAI, Type, Modality, Content } from "@google/genai";
+import { GoogleGenAI, Modality, Content } from "@google/genai";
 import type { Page, GroundingChunk } from '../types';
 
-if (!process.env.API_KEY) {
-    throw new Error("API_KEY environment variable is not set");
-}
+const envApiKey = (() => {
+    // Prefer the Vite-style environment variable, but keep backwards compatibility
+    const viteKey = typeof import.meta !== 'undefined' ? import.meta.env?.VITE_GEMINI_API_KEY : undefined;
+    if (viteKey) {
+        return viteKey as string;
+    }
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    if (typeof process !== 'undefined' && process.env) {
+        return process.env.GEMINI_API_KEY ?? process.env.API_KEY;
+    }
+
+    return undefined;
+})();
+
+let aiClient: GoogleGenAI | null = envApiKey ? new GoogleGenAI({ apiKey: envApiKey }) : null;
+
+const ensureClient = (): GoogleGenAI => {
+    if (!aiClient) {
+        throw new Error('Configura la variable de entorno GEMINI_API_KEY en tu archivo .env.local para habilitar las funciones de IA.');
+    }
+    return aiClient;
+};
 
 const FULL_BOOK: Page[] = [
   { page: 1, chapter: "A VECES CAER, A VECES VOLAR", content: "CRISTOFER BRAÑAS" },
@@ -67,10 +84,10 @@ const FULL_BOOK: Page[] = [
 
 /**
  * Fix: Exported getGenAI function for LiveJournal component.
- * It creates a new instance of GoogleGenAI to ensure the latest configuration.
+ * Returns the shared client instance ensuring the API key is configured.
  */
 export function getGenAI() {
-    return new GoogleGenAI({ apiKey: process.env.API_KEY! });
+    return ensureClient();
 }
 
 /**
@@ -86,7 +103,8 @@ export const generateBookContent = async (): Promise<Page[]> => {
  * Uses Gemini to generate a short summary of the provided text.
  */
 export const summarizeText = async (text: string): Promise<string> => {
-    const response = await ai.models.generateContent({
+    const client = ensureClient();
+    const response = await client.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: `Resume el siguiente texto en una o dos frases, capturando la idea principal:\n\n"${text}"`,
     });
@@ -100,7 +118,8 @@ const bookContext = FULL_BOOK.map(p => `Página ${p.page}, Capítulo: ${p.chapte
  * Creates a chat session with history and system instructions to provide context-aware responses.
  */
 export const getChatbotResponse = async (history: Content[], message: string): Promise<string> => {
-    const chat = ai.chats.create({
+    const client = ensureClient();
+    const chat = client.chats.create({
         model: 'gemini-2.5-flash',
         config: {
             systemInstruction: `Eres un guía de reflexión basado en el libro 'A VECES CAER, A VECES VOLAR' de Cristofer Brañas. Tu propósito es ayudar a los usuarios a profundizar en los conceptos del libro. El contenido del libro es el siguiente:\n\n${bookContext}\n\nResponde de forma concisa y útil.`
@@ -117,7 +136,8 @@ export const getChatbotResponse = async (history: Content[], message: string): P
  * Uses Google Search grounding to provide up-to-date answers and returns sources.
  */
 export const getGroundedResponse = async (query: string): Promise<{ text: string; chunks: GroundingChunk[] }> => {
-    const response = await ai.models.generateContent({
+    const client = ensureClient();
+    const response = await client.models.generateContent({
         model: "gemini-2.5-flash",
         contents: query,
         config: {
@@ -140,7 +160,8 @@ export const getGroundedResponse = async (query: string): Promise<{ text: string
  * Uses a multimodal model to edit an image based on a text prompt.
  */
 export const editImage = async (base64String: string, mimeType: string, prompt: string): Promise<string> => {
-    const response = await ai.models.generateContent({
+    const client = ensureClient();
+    const response = await client.models.generateContent({
         model: 'gemini-2.5-flash-image',
         contents: {
             parts: [
@@ -168,8 +189,9 @@ export const editImage = async (base64String: string, mimeType: string, prompt: 
  */
 export const generateInstagramPostImage = async (text: string): Promise<string> => {
     const prompt = `Crea una imagen para una publicación de Instagram, con ratio 1:1. La imagen debe tener un fondo de papel texturizado de color crema o blanco roto. Sobre este fondo, muestra el siguiente texto con una fuente que imite una máquina de escribir clásica (como Courier), en color negro. El texto debe estar centrado y presentado de forma estética, como una cita o un poema corto. No incluyas ningún otro elemento gráfico, solo el texto y el fondo de papel. Al final del texto, en la esquina inferior derecha, añade la firma "arizzta frases" en un tamaño más pequeño y con un estilo de letra manuscrita, ligeramente difuminado, como si estuviera escrito con tinta. El texto principal es: "${text}"`;
-    
-    const response = await ai.models.generateContent({
+
+    const client = ensureClient();
+    const response = await client.models.generateContent({
         model: 'gemini-2.5-flash-image',
         contents: {
             parts: [{ text: prompt }],

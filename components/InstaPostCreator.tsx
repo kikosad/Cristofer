@@ -22,7 +22,7 @@ const InstaPostCreator: React.FC = () => {
       setGeneratedImage(`data:image/png;base64,${resultBase64}`);
     } catch (err) {
       console.error('Error generating post image:', err);
-      setError('No se pudo generar la imagen. Inténtalo de nuevo.');
+      setError(err instanceof Error ? err.message : 'No se pudo generar la imagen. Inténtalo de nuevo.');
     } finally {
       setIsLoading(false);
     }

@@ -39,7 +39,8 @@ const Chatbot: React.FC = () => {
       setMessages((prev) => [...prev, modelMessage]);
     } catch (error) {
       console.error('Error getting chatbot response:', error);
-      const errorMessage: ChatMessage = { role: 'model', text: 'Lo siento, no pude procesar tu solicitud en este momento.' };
+      const fallback = error instanceof Error ? error.message : 'Lo siento, no pude procesar tu solicitud en este momento.';
+      const errorMessage: ChatMessage = { role: 'model', text: fallback };
       setMessages((prev) => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
